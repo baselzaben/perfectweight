@@ -1,16 +1,24 @@
 // ignore_for_file: non_constant_identifier_names
 
 
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:perfectweight/GlobalVaribales.dart';
+import 'package:perfectweight/screens/macros_screen.dart';
 import 'package:perfectweight/screens/result_screen.dart';
 
 import 'dart:math';
 
 import '../constants.dart';
 import '../widget/base/base_screen.dart';
+import '../widget/custom_button.dart';
 import '../widget/gender_container.dart';
 import '../widget/height_container.dart';
 import '../widget/selector_container.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import 'package:http/http.dart' as http;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -23,7 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool isMaleActive = true;
 
   int age = 19, weight = 74;
-
+String ?_scanBarcode;
   double height = 180;
 
   @override
@@ -39,9 +47,18 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text(
-                'Body mass index (BMI) ',
-              ),
+              ElevatedButton.icon(
+              onPressed: () {
+                scanBarcodeNormal();
+
+
+                },
+          icon: Icon( // <-- Icon
+            Icons.camera_alt_sharp,
+            size: 24.0,
+          ),
+          label: Text('حساب السعرات الحرارية'), // <-- Text
+        ),
               Row(
                 children: [
                   GenderContainer(
@@ -204,7 +221,7 @@ class _HomeScreenState extends State<HomeScreen> {
       moreTips = '\nإذا كنت تعاني من نقص الوزن ، يمكن للطبيب العام مساعدتك.';
       statusColor = kYellowGauge;
     } else if (bmi >= 18.5 && bmi <= 25) {
-      status = 'ظبيعي';
+      status = 'طبيعي';
       statusColor = Colors.greenAccent;
       tip = 'ثابر على العمل الجيد';
       moreTips =
@@ -236,5 +253,87 @@ class _HomeScreenState extends State<HomeScreen> {
       dminWeight,
       dmaxWeight,
     ];
+  }
+
+
+
+  void scanBarcodeNormal() async {
+    String barcodeScanRes;
+    // Platform messages may fail, so we use a try/catch PlatformException.
+    try {
+      barcodeScanRes = await FlutterBarcodeScanner.scanBarcode(
+          '#ff6666', 'Cancel', true, ScanMode.BARCODE);
+      print(barcodeScanRes);
+      setState(() {
+        _scanBarcode = barcodeScanRes;
+        print(" barcodeScanRes :"+barcodeScanRes+"   ");
+
+        fetchData2(barcodeScanRes);
+
+
+
+
+
+      });
+    } on PlatformException {
+      barcodeScanRes = 'Failed to get platform version.';
+    }
+
+
+
+  }
+  Future fetchData2(String barcode) async {
+    try {
+      http.Response response;
+      response = await http
+          .get(
+          Uri.parse("https://us.openfoodfacts.org/api/v0/product/" + barcode));
+      if (response.statusCode == 200) {
+        var mapResponse = json.decode(response.body);
+        String proteins = mapResponse!["product"]['nutriments']['proteins_100g'].toString();
+        String sugars = mapResponse!["product"]['nutriments']['sugars_100g'].toString();
+
+        String carbohydrates = mapResponse!["product"]['nutriments']['carbohydrates_100g'].toString();
+        String fat = mapResponse!["product"]['nutriments']['fat_100g'].toString();
+        String _keywords = mapResponse!["product"]['_keywords'].toString();
+        String image = mapResponse!["product"]['image_front_small_url'].toString();
+        String energy_100g = mapResponse!["product"]['nutriments']['energy_100g'].toString();
+        String sodium_valu= mapResponse!["product"]['nutriments']['sodium_100g'].toString();
+
+        Globalvireables.proteins = proteins;
+        Globalvireables.energy_100g = energy_100g;
+        Globalvireables.fat = fat;
+        Globalvireables.image = image;
+
+        Globalvireables.sugars = sugars;
+
+        Globalvireables.sodium_valu=sodium_valu;
+
+        Globalvireables.carbohydrates = carbohydrates;
+        print(" image :" + image + "   ");
+
+        if (proteins.isEmpty || image.isEmpty) {
+          showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: Text('حساب السعرات الحرارية'),
+                content: Text('لا تتوفر معلومات كافية عن هذا المنتج'),
+              )
+          );
+        } else {
+          Navigator.push(context, MaterialPageRoute(builder: (context) {
+            return const macros_screen();
+          }));
+        }
+      }
+    }catch(_){
+      showDialog(
+          context: context,
+          builder: (_) => AlertDialog(
+            title: Text('حساب السعرات الحرارية'),
+            content: Text('لا تتوفر معلومات كافية عن هذا المنتج'),
+          )
+      );
+    }
   }
 }

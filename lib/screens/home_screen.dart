@@ -306,13 +306,11 @@ String ?_scanBarcode;
         Globalvireables.image = image;
 
         Globalvireables.sugars = sugars;
-
         Globalvireables.sodium_valu=sodium_valu;
-
         Globalvireables.carbohydrates = carbohydrates;
         print(" image :" + image + "   ");
 
-        if (proteins.isEmpty || image.isEmpty) {
+        if (proteins.isEmpty || image.isEmpty || proteins=="null" || energy_100g=="null") {
           showDialog(
               context: context,
               builder: (_) => AlertDialog(
@@ -321,7 +319,7 @@ String ?_scanBarcode;
               )
           );
         } else {
-          Navigator.push(context, MaterialPageRoute(builder: (context) {
+          Navigator.push(context , MaterialPageRoute(builder: (context) {
             return const macros_screen();
           }));
         }
@@ -334,6 +332,7 @@ String ?_scanBarcode;
             content: Text('لا تتوفر معلومات كافية عن هذا المنتج'),
           )
       );
+
     }
   }
 }

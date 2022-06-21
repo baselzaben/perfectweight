@@ -21,7 +21,7 @@ class AdviceContainer extends StatelessWidget {
     return RichText(
       textAlign: TextAlign.center,
       text: TextSpan(
-        text: 'advice: ',
+        text: 'النصيحة : ',
         style: kTextVariableStyle.copyWith(
             color: statusColor,
             fontWeight: FontWeight.bold,
